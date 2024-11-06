@@ -1,24 +1,16 @@
-// components/AuthForm.js
 import { useContext, useEffect, useState } from "react";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../components/ui/card";
 import axios from "axios";
 import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
 
 const AuthForm = () => {
+  const { isLoggedIn, setIsLoggedIn } = useContext(UserContext);
+  const router = useRouter();
 
-    const { isLoggedIn, setIsLoggedIn } = useContext(UserContext)
-
-    const router = useRouter()
-
+  const [isClient, setIsClient] = useState(false);  // Track client-side rendering
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -28,6 +20,9 @@ const AuthForm = () => {
     password: "",
   });
 
+  useEffect(() => {
+    setIsClient(true);  // Update state to indicate the component is now mounted in the browser
+  }, []);
 
   const toggleForm = () => {
     setIsRegister(!isRegister);
@@ -57,11 +52,11 @@ const AuthForm = () => {
         email: formData.email,
         username: formData.username,
         password: formData.password,
-      }
+      };
       try {
         const response = await axios.post(`${BASE_URL}register`, RegisterData);
         console.log(response.data);
-        setIsRegister(false)
+        setIsRegister(false);
       } catch (error) {
         console.log(error.message);
       }
@@ -79,23 +74,28 @@ const AuthForm = () => {
       try {
         const response = await axios.post(`${BASE_URL}login`, logindata);
         console.log(response.data);
-        localStorage.setItem("token", response.data?.token)
-        localStorage.setItem("username", response.data?.data?.username)
-        localStorage.setItem("email", response.data?.data?.email)
-        localStorage.setItem("id", response.data?.data?._id)
-        localStorage.setItem("isLoggedIn", true)
-        setIsLoggedIn(true)
-        router.push("/Homepage")
+
+        if (isClient) {  // Ensure localStorage is accessed only on the client-side
+          localStorage.setItem("token", response.data?.token);
+          localStorage.setItem("username", response.data?.data?.username);
+          localStorage.setItem("email", response.data?.data?.email);
+          localStorage.setItem("id", response.data?.data?._id);
+          localStorage.setItem("isLoggedIn", true);
+          setIsLoggedIn(true);
+        }
+
+        router.push("/Homepage");
         setFormData({
-            username: "",
-            password: ""
-        })
+          username: "",
+          password: "",
+        });
       } catch (error) {
         console.log(error.message);
       }
     }
   };
-  
+
+  if (!isClient) return null;  // Prevent SSR issues
 
   return (
     <Card className="max-w-md mx-auto mt-10 p-6 w-full">
