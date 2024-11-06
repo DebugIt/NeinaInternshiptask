@@ -28,7 +28,6 @@ const AuthForm = () => {
     password: "",
   });
 
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
   const toggleForm = () => {
     setIsRegister(!isRegister);
@@ -48,6 +47,7 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
     if (isRegister) {
       console.log("Register data: ", formData);
