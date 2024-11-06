@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from "../components/ui/card";
 import axios from "axios";
-import UserContext from "@/context/userContext";
+import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
 
 const AuthForm = () => {
