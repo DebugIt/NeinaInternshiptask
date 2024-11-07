@@ -7,10 +7,16 @@ import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
 
 const AuthForm = () => {
-  const { isLoggedIn, setIsLoggedIn } = useContext(UserContext);
+  const [isClient, setIsClient] = useState(false); // Track client-side rendering
   const router = useRouter();
 
-  const [isClient, setIsClient] = useState(false);  // Track client-side rendering
+  useEffect(() => {
+    setIsClient(true); // Update state to indicate client-side rendering
+  }, []);
+
+  // Ensure `UserContext` is only accessed on the client side
+  const { isLoggedIn, setIsLoggedIn } = isClient ? useContext(UserContext) : {};
+
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -19,10 +25,6 @@ const AuthForm = () => {
     username: "",
     password: "",
   });
-
-  useEffect(() => {
-    setIsClient(true);  // Update state to indicate the component is now mounted in the browser
-  }, []);
 
   const toggleForm = () => {
     setIsRegister(!isRegister);
@@ -45,37 +47,18 @@ const AuthForm = () => {
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
     if (isRegister) {
-      console.log("Register data: ", formData);
-      const RegisterData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        username: formData.username,
-        password: formData.password,
-      };
+      const RegisterData = { ...formData };
       try {
         const response = await axios.post(`${BASE_URL}register`, RegisterData);
-        console.log(response.data);
         setIsRegister(false);
       } catch (error) {
         console.log(error.message);
       }
     } else {
-      console.log("Login data: ", {
-        username: formData.username,
-        password: formData.password,
-      });
-
-      const logindata = {
-        username: formData.username,
-        password: formData.password,
-      };
-
+      const logindata = { username: formData.username, password: formData.password };
       try {
         const response = await axios.post(`${BASE_URL}login`, logindata);
-        console.log(response.data);
-
-        if (isClient) {  // Ensure localStorage is accessed only on the client-side
+        if (isClient) {
           localStorage.setItem("token", response.data?.token);
           localStorage.setItem("username", response.data?.data?.username);
           localStorage.setItem("email", response.data?.data?.email);
@@ -83,19 +66,15 @@ const AuthForm = () => {
           localStorage.setItem("isLoggedIn", true);
           setIsLoggedIn(true);
         }
-
         router.push("/Homepage");
-        setFormData({
-          username: "",
-          password: "",
-        });
+        setFormData({ username: "", password: "" });
       } catch (error) {
         console.log(error.message);
       }
     }
   };
 
-  if (!isClient) return null;  // Prevent SSR issues
+  if (!isClient) return null; // Prevent SSR issues
 
   return (
     <Card className="max-w-md mx-auto mt-10 p-6 w-full">

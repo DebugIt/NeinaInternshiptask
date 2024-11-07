@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import { Inter } from 'next/font/google'
 import UserContext from '@/context/userContext'
 import Navbar from '@/components/Navbar'
 import Head from 'next/head'
@@ -8,21 +7,26 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 
 export default function Home() {
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const storedLoginStatus = localStorage.getItem('isLoggedIn')
+    setIsClient(true); // Set client-side flag
+    const storedLoginStatus = localStorage.getItem('isLoggedIn');
     if (storedLoginStatus === 'true') {
-      setIsLoggedIn(true)
-      router.push("/Homepage")
+      setIsLoggedIn(true);
+      router.push("/Homepage");
     }
-  }, [router])
+  }, [router]);
 
   useEffect(() => {
-    localStorage.setItem('isLoggedIn', isLoggedIn)
-  }, [isLoggedIn])
+    if (isClient) {
+      localStorage.setItem('isLoggedIn', isLoggedIn);
+    }
+  }, [isLoggedIn, isClient]);
+
+  if (!isClient) return null; // Ensure SSR does not render this component
 
   return (
     <>
@@ -35,5 +39,5 @@ export default function Home() {
         </div>
       </UserContext.Provider>
     </>
-  )
+  );
 }
