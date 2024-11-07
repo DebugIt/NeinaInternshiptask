@@ -3,26 +3,17 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../components/ui/card";
 import axios from "axios";
-import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
-
+import UserContext from "../context/userContext";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Spinner from "@/components/Spinner";
 
-
 const AuthForm = () => {
-  const [isClient, setIsClient] = useState(false); 
+  const { isLoggedIn, setIsLoggedIn } = useContext(UserContext);
   const router = useRouter();
-
-  useEffect(() => {
-    setIsClient(true); 
-  }, []);
-
-  const { isLoggedIn, setIsLoggedIn } = isClient ? useContext(UserContext) : {};
-
   const [isRegister, setIsRegister] = useState(false);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -49,43 +40,44 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
     if (isRegister) {
-      setLoading(true)
-      const RegisterData = { ...formData };
+      const registerData = { ...formData };
       try {
-        const response = await axios.post(`${BASE_URL}register`, RegisterData);
+        await axios.post(`${BASE_URL}register`, registerData);
         setIsRegister(false);
-        toast.success("Registered Successfully")
-        setLoading(false)
+        toast.success("Registered Successfully");
+        setLoading(false);
       } catch (error) {
+        toast.error("Error while registering");
         console.log(error.message);
+        setLoading(false);
       }
     } else {
-      setLoading(true)
-      const logindata = { username: formData.username, password: formData.password };
+      const loginData = { username: formData.username, password: formData.password };
       try {
-        const response = await axios.post(`${BASE_URL}login`, logindata);
-        if (response.data?.status === 200) {
+        const response = await axios.post(`${BASE_URL}login`, loginData);
+        if (response) {
           localStorage.setItem("token", response.data?.token);
           localStorage.setItem("username", response.data?.data?.username);
           localStorage.setItem("email", response.data?.data?.email);
           localStorage.setItem("id", response.data?.data?._id);
           localStorage.setItem("isLoggedIn", true);
           setIsLoggedIn(true);
+          router.push("/Homepage"); // Direct redirection after setting localStorage
         }
-        router.push("/Homepage");
         setFormData({ username: "", password: "" });
-        setLoading(false)
+        setLoading(false);
       } catch (error) {
-        setLoading(false)
+        setLoading(false);
+        toast.error("Error while logging in");
         console.log(error.message);
       }
     }
   };
 
-  if (!isClient) return null; 
   return (
     <Card className="max-w-md mx-auto mt-10 p-6 w-full">
       <CardHeader>
@@ -139,15 +131,7 @@ const AuthForm = () => {
             required
           />
           <Button type="submit" className="w-full">
-            {
-              loading ? (
-                <Spinner />
-              ) : (
-                <>
-                  {isRegister ? "Sign Up" : "Login"}
-                </>
-              )
-            }
+            {loading ? <Spinner /> : isRegister ? "Sign Up" : "Login"}
           </Button>
         </form>
       </CardContent>
@@ -159,7 +143,7 @@ const AuthForm = () => {
           </Button>
         </p>
       </CardFooter>
-      <ToastContainer autoClose={3000}/>
+      <ToastContainer autoClose={3000} />
     </Card>
   );
 };
