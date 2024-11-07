@@ -10,16 +10,19 @@ import { useRouter } from 'next/router'
 export default function Home() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-
   const router = useRouter();
 
   useEffect(() => {
     const storedLoginStatus = localStorage.getItem('isLoggedIn')
-    if (storedLoginStatus) {
-      setIsLoggedIn(storedLoginStatus === 'true')
+    if (storedLoginStatus === 'true') {
+      setIsLoggedIn(true)
       router.push("/Homepage")
     }
-  }, [])
+  }, [router])
+
+  useEffect(() => {
+    localStorage.setItem('isLoggedIn', isLoggedIn)
+  }, [isLoggedIn])
 
   return (
     <>
