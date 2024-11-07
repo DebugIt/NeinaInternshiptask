@@ -5,14 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../compone
 import axios from "axios";
 import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
-import Spinner from "../components/Spinner";
+
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Spinner from "@/components/Spinner";
+
 
 const AuthForm = () => {
-  const { isLoggedIn, setIsLoggedIn } = useContext(UserContext);
+  const [isClient, setIsClient] = useState(false); 
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); 
+  }, []);
+
+  const { isLoggedIn, setIsLoggedIn } = isClient ? useContext(UserContext) : {};
+
   const [isRegister, setIsRegister] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,10 +30,6 @@ const AuthForm = () => {
     username: "",
     password: "",
   });
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const toggleForm = () => {
     setIsRegister(!isRegister);
@@ -43,27 +49,24 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-    try {
-      if (isRegister) {
-        const RegisterData = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-        };
-        await axios.post(`${BASE_URL}register`, RegisterData);
+    if (isRegister) {
+      setLoading(true)
+      const RegisterData = { ...formData };
+      try {
+        const response = await axios.post(`${BASE_URL}register`, RegisterData);
         setIsRegister(false);
-      } else {
-        const logindata = {
-          username: formData.username,
-          password: formData.password,
-        };
+        toast.success("Registered Successfully")
+        setLoading(false)
+      } catch (error) {
+        console.log(error.message);
+      }
+    } else {
+      setLoading(true)
+      const logindata = { username: formData.username, password: formData.password };
+      try {
         const response = await axios.post(`${BASE_URL}login`, logindata);
-
         if (isClient) {
           localStorage.setItem("token", response.data?.token);
           localStorage.setItem("username", response.data?.data?.username);
@@ -72,93 +75,89 @@ const AuthForm = () => {
           localStorage.setItem("isLoggedIn", true);
           setIsLoggedIn(true);
         }
-
         router.push("/Homepage");
-        setFormData({
-          username: "",
-          password: "",
-        });
+        setFormData({ username: "", password: "" });
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        console.log(error.message);
       }
-    } catch (error) {
-      console.log(error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!isClient) return null;
-
+  if (!isClient) return null; 
   return (
     <Card className="max-w-md mx-auto mt-10 p-6 w-full">
-      {loading ? (
-        <Spinner />
-      ) : (
-        <>
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold">
-              {isRegister ? "Register" : "Login"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isRegister && (
-                <>
-                  <Input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <Input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                  />
-                  <Input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </>
-              )}
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold">
+          {isRegister ? "Register" : "Login"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && (
+            <>
               <Input
                 type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
+                name="firstName"
+                placeholder="First Name"
+                value={formData.firstName}
                 onChange={handleInputChange}
                 required
               />
               <Input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+              />
+              <Input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
                 onChange={handleInputChange}
                 required
               />
-              <Button type="submit" className="w-full">
-                {isRegister ? "Sign Up" : "Login"}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter>
-            <p className="text-sm text-center">
-              {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+            </>
+          )}
+          <Input
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={formData.username}
+            onChange={handleInputChange}
+            required
+          />
+          <Input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleInputChange}
+            required
+          />
+          <Button type="submit" className="w-full">
+            {isRegister ? "Sign Up" : "Login"}
+          </Button>
+        </form>
+      </CardContent>
+      <CardFooter>
+        <p className="text-sm text-center">
+          {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+          {
+            loading ? (
+              <Spinner />
+            ) : (
               <Button variant="link" onClick={toggleForm}>
                 {isRegister ? "Login" : "Register"}
               </Button>
-            </p>
-          </CardFooter>
-        </>
-      )}
+            )
+          }
+        </p>
+      </CardFooter>
+      <ToastContainer autoClose={3000}/>
     </Card>
   );
 };
