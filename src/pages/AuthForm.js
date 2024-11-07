@@ -67,7 +67,7 @@ const AuthForm = () => {
       const logindata = { username: formData.username, password: formData.password };
       try {
         const response = await axios.post(`${BASE_URL}login`, logindata);
-        if (isClient) {
+        if (response.data?.status === 200) {
           localStorage.setItem("token", response.data?.token);
           localStorage.setItem("username", response.data?.data?.username);
           localStorage.setItem("email", response.data?.data?.email);
