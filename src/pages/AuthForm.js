@@ -5,19 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../compone
 import axios from "axios";
 import UserContext from "../context/userContext";
 import { useRouter } from "next/router";
+import Spinner from "../components/Spinner";
 
 const AuthForm = () => {
-  const [isClient, setIsClient] = useState(false); // Track client-side rendering
+  const { isLoggedIn, setIsLoggedIn } = useContext(UserContext);
   const router = useRouter();
-
-  useEffect(() => {
-    setIsClient(true); // Update state to indicate client-side rendering
-  }, []);
-
-  // Ensure `UserContext` is only accessed on the client side
-  const { isLoggedIn, setIsLoggedIn } = isClient ? useContext(UserContext) : {};
-
+  const [isClient, setIsClient] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -25,6 +20,10 @@ const AuthForm = () => {
     username: "",
     password: "",
   });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const toggleForm = () => {
     setIsRegister(!isRegister);
@@ -44,20 +43,27 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-    if (isRegister) {
-      const RegisterData = { ...formData };
-      try {
-        const response = await axios.post(`${BASE_URL}register`, RegisterData);
+    try {
+      if (isRegister) {
+        const RegisterData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+        };
+        await axios.post(`${BASE_URL}register`, RegisterData);
         setIsRegister(false);
-      } catch (error) {
-        console.log(error.message);
-      }
-    } else {
-      const logindata = { username: formData.username, password: formData.password };
-      try {
+      } else {
+        const logindata = {
+          username: formData.username,
+          password: formData.password,
+        };
         const response = await axios.post(`${BASE_URL}login`, logindata);
+
         if (isClient) {
           localStorage.setItem("token", response.data?.token);
           localStorage.setItem("username", response.data?.data?.username);
@@ -66,81 +72,93 @@ const AuthForm = () => {
           localStorage.setItem("isLoggedIn", true);
           setIsLoggedIn(true);
         }
+
         router.push("/Homepage");
-        setFormData({ username: "", password: "" });
-      } catch (error) {
-        console.log(error.message);
+        setFormData({
+          username: "",
+          password: "",
+        });
       }
+    } catch (error) {
+      console.log(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!isClient) return null; // Prevent SSR issues
+  if (!isClient) return null;
 
   return (
     <Card className="max-w-md mx-auto mt-10 p-6 w-full">
-      <CardHeader>
-        <CardTitle className="text-3xl font-bold">
-          {isRegister ? "Register" : "Login"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <>
+      {loading ? (
+        <Spinner />
+      ) : (
+        <>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold">
+              {isRegister ? "Register" : "Login"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isRegister && (
+                <>
+                  <Input
+                    type="text"
+                    name="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    type="text"
+                    name="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </>
+              )}
               <Input
                 type="text"
-                name="firstName"
-                placeholder="First Name"
-                value={formData.firstName}
+                name="username"
+                placeholder="Username"
+                value={formData.username}
                 onChange={handleInputChange}
                 required
               />
               <Input
-                type="text"
-                name="lastName"
-                placeholder="Last Name"
-                value={formData.lastName}
-                onChange={handleInputChange}
-              />
-              <Input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
                 onChange={handleInputChange}
                 required
               />
-            </>
-          )}
-          <Input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleInputChange}
-            required
-          />
-          <Input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-          />
-          <Button type="submit" className="w-full">
-            {isRegister ? "Sign Up" : "Login"}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <p className="text-sm text-center">
-          {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
-          <Button variant="link" onClick={toggleForm}>
-            {isRegister ? "Login" : "Register"}
-          </Button>
-        </p>
-      </CardFooter>
+              <Button type="submit" className="w-full">
+                {isRegister ? "Sign Up" : "Login"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter>
+            <p className="text-sm text-center">
+              {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+              <Button variant="link" onClick={toggleForm}>
+                {isRegister ? "Login" : "Register"}
+              </Button>
+            </p>
+          </CardFooter>
+        </>
+      )}
     </Card>
   );
 };
