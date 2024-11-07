@@ -139,22 +139,24 @@ const AuthForm = () => {
             required
           />
           <Button type="submit" className="w-full">
-            {isRegister ? "Sign Up" : "Login"}
+            {
+              loading ? (
+                <Spinner />
+              ) : (
+                <>
+                  {isRegister ? "Sign Up" : "Login"}
+                </>
+              )
+            }
           </Button>
         </form>
       </CardContent>
       <CardFooter>
         <p className="text-sm text-center">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
-          {
-            loading ? (
-              <Spinner />
-            ) : (
-              <Button variant="link" onClick={toggleForm}>
-                {isRegister ? "Login" : "Register"}
-              </Button>
-            )
-          }
+          <Button variant="link" onClick={toggleForm}>
+            {isRegister ? "Login" : "Register"}
+          </Button>
         </p>
       </CardFooter>
       <ToastContainer autoClose={3000}/>
